@@ -5,7 +5,6 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 // 📧 Email validation regex
-const transporter = require("../config/email"); 
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
