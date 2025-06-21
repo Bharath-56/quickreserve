@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const pgSession = require("connect-pg-simple")(session);
+const db = require("./db")
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
@@ -21,10 +23,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // 🧠 Session config
 app.use(session({
+  store: new pgSession({
+    pool: db,
+    tableName: "session"
+  }),
   secret: process.env.SESSION_SECRET || "secret_key",
   resave: false,
-  saveUninitialized: true,
-  cookie: { maxAge: 60 * 60 * 1000 }
+  saveUninitialized: false,
+  cookie: { maxAge: 60 * 60 * 1000 } // 1 hour
 }));
 
 // 🌐 Serve static frontend files
