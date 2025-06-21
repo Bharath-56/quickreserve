@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 // 📧 Email validation regex
+const transporter = require("../config/email"); 
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -21,40 +22,57 @@ const validateEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 router.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validate email
+  // 1️⃣ Email Format Validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ success: false, message: "Invalid email format" });
   }
 
   try {
+    // 2️⃣ Check if email already exists
+    const check = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (check.rows.length > 0) {
+      return res.status(409).json({ success: false, message: "⚠️ Email already registered" });
+    }
+
+    // 3️⃣ Create user
     const hashedPassword = await bcrypt.hash(password, 10);
     const userResult = await db.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id",
-      [name, email, hashedPassword]
+      "INSERT INTO users (name, email, password, is_verified) VALUES ($1, $2, $3, $4) RETURNING id",
+      [name, email, hashedPassword, false]
     );
-
     const userId = userResult.rows[0].id;
-    const token = crypto.randomBytes(32).toString("hex");
 
+    // 4️⃣ Generate verification token
+    const token = crypto.randomBytes(32).toString("hex");
     await db.query("INSERT INTO email_tokens (user_id, token) VALUES ($1, $2)", [userId, token]);
 
+    // 5️⃣ Send verification email
     const verifyLink = `http://192.168.122.203:3000/auth/verify?token=${token}`;
-
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Verify your email",
-      html: `<h3>Click below to verify your email:</h3><a href="${verifyLink}">${verifyLink}</a>`
+      html: `
+        <h3>Verify your QuickReserve account</h3>
+        <p>Click the link below to verify your email:</p>
+        <a href="${verifyLink}">${verifyLink}</a>
+        <p>If you did not register, you can ignore this message.</p>
+      `
     });
 
     res.status(200).json({ success: true, message: "✅ Registered. Check your email to verify." });
+
   } catch (err) {
     console.error("❌ Registration error:", err);
-    res.status(500).json({ success: false, message: "Registration failed" });
+
+    if (err.code === "23505") {
+      res.status(409).json({ success: false, message: "⚠️ Email already exists" });
+    } else {
+      res.status(500).json({ success: false, message: "❌ Registration failed" });
+    }
   }
 });
-
 
 // 🔓 Login
 router.post("/login", async (req, res) => {
