@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickReserve - Admin Panel</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+  <a href="index.html">Home</a>
+  <a href="login.html" id="nav-login">Login</a>
+  <a href="register.html" id="nav-register">Register</a>
+  <a href="search.html" id="nav-search">Search</a>
+  <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+  <a href="admin.html" id="nav-admin">Admin</a>
+  <a href="/auth/logout" id="nav-logout">Logout</a>
+
+</nav>
+
+
+</header>
+
+
+<div class="container">
+  <h2>Admin Panel - Add Train</h2>
+ <form action="/admin/add-train" method="POST">
+  <label for="name">Train Name</label>
+  <input type="text" name="name" required>
+
+  <label for="source">Source</label>
+  <input type="text" name="source" required>
+
+  <label for="destination">Destination</label>
+  <input type="text" name="destination" required>
+
+  <label for="date">Date</label>
+  <input type="date" name="date" required>
+
+  <label for="departure_time">Departure Time</label>
+  <input type="time" name="departure_time" required>
+
+  <label for="arrival_time">Arrival Time</label>
+  <input type="time" name="arrival_time" required>
+
+  <button type="submit">Add Train</button>
+</form>
+
+</div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve. All rights reserved.</p>
+</footer>
+
+<script>
+  fetch("/auth/status")
+    .then(res => res.json())
+    .then(data => {
+      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
+      const hideIfLoggedIn = ["nav-login", "nav-register"];
+
+      if (data.loggedIn) {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+      } else {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+      }
+    });
+</script>
+
+
+
+</body>
+</html>

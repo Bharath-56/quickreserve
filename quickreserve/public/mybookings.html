@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Bookings | QuickReserve</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .booking-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .booking-card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #f9f9ff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .booking-card strong {
+      color: #003366;
+      font-size: 1.2rem;
+    }
+
+    nav a {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" id="nav-login">Login</a>
+    <a href="register.html" id="nav-register">Register</a>
+    <a href="search.html" id="nav-search">Search</a>
+    <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+    <a href="admin-login.html" id="nav-admin">Admin</a>
+    <a href="/auth/logout" id="nav-logout">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>My Bookings</h2>
+  <div id="booking-list" class="booking-container"></div>
+</div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve. All rights reserved.</p>
+</footer>
+
+<script>
+  // Navbar session update
+  fetch("/auth/status")
+    .then(res => res.json())
+    .then(data => {
+      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
+      const hideIfLoggedIn = ["nav-login", "nav-register"];
+      showIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "inline-block" : "none");
+      hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "none" : "inline-block");
+    });
+
+  // Fetch bookings
+ fetch("/user/mybookings")
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success || data.bookings.length === 0) {
+      document.getElementById("booking-list").innerHTML = "<p>No bookings found.</p>";
+      return;
+    }
+
+    // Render the list
+    data.bookings.forEach(b => {
+      const item = document.createElement("li");
+      item.innerHTML = `
+        <strong>${b.name}</strong> (${b.source} ➡ ${b.destination})<br>
+        Date: ${b.date} | Class: ${b.seat_class} | Quantity: ${b.quantity}<br>
+        Departure: ${b.departure_time} | Arrival: ${b.arrival_time}
+      `;
+      document.getElementById("booking-list").appendChild(item);
+    });
+  });
+
+</script>
+
+</body>
+</html>

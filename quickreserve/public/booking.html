@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Ticket - QuickReserve</title>
+  <link rel="stylesheet" href="css/styles.css">
+
+  <header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+  <a href="index.html">Home</a>
+  <a href="login.html" id="nav-login">Login</a>
+  <a href="register.html" id="nav-register">Register</a>
+  <a href="search.html" id="nav-search">Search</a>
+  <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+  <a href="admin-login.html" id="nav-admin">Admin</a>
+  <a href="/auth/logout" id="nav-logout">Logout</a>
+</nav>
+
+
+</header>
+
+</head>
+
+<div id="navbar-placeholder"></div>
+<script>
+  fetch("public/navbar.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("navbar-placeholder").innerHTML = html;
+    });
+</script>
+<script>
+  const isLoggedIn = document.cookie.includes("connect.sid");
+
+  document.querySelectorAll(".protected-link").forEach(link => {
+    if (!isLoggedIn) link.style.display = "none";
+  });
+
+  if (isLoggedIn) {
+    document.getElementById("login-link").style.display = "none";
+    document.getElementById("logout-link").style.display = "inline";
+  }
+</script>
+
+<body>
+  <header>
+    <h1>Book Your Ticket</h1>
+  </header>
+  <div class="container">
+    <form action="/user/book" method="POST">
+      <input type="hidden" name="train_id" value="<!-- to be set dynamically -->">
+      <label for="class">Class</label>
+      <select name="seat_class" required>
+        <option value="Sleeper">Sleeper</option>
+        <option value="AC">AC</option>
+      </select>
+      <label for="quantity">Seats</label>
+      <input type="number" name="quantity" min="1" max="6" required>
+      <button type="submit">Confirm Booking</button>
+    </form>
+  </div>
+</body>
+</html>

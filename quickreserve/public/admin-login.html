@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Login | QuickReserve</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336; /* Red background */
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s ease-in-out;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚄 Admin Login - QuickReserve</h1>
+</header>
+
+<div class="container">
+  <form id="admin-login-form">
+    <label>Username</label>
+    <input type="text" name="username" required />
+
+    <label>Password</label>
+    <input type="password" name="password" required />
+
+    <button type="submit">Login as Admin</button>
+  </form>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve Admin Portal</p>
+</footer>
+
+<script>
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+
+  document.getElementById("admin-login-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const username = form.username.value;
+    const password = form.password.value;
+
+    try {
+      const response = await fetch("/admin-auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.location.href = "/admin.html";
+      } else {
+        showToast(data.message);
+      }
+    } catch (err) {
+      showToast("❌ Login failed. Please try again.");
+    }
+  });
+</script>
+
+</body>
+</html>

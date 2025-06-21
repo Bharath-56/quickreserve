@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuickReserve - Login</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s ease-in-out;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" id="nav-login">Login</a>
+    <a href="register.html" id="nav-register">Register</a>
+    <a href="search.html" id="nav-search">Search</a>
+    <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+    <a href="admin-login.html" id="nav-admin">Admin</a>
+    <a href="/auth/logout" id="nav-logout">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>Login</h2>
+  <form id="login-form">
+    <label>Email</label>
+    <input type="email" name="email" required />
+
+    <label>Password</label>
+    <input type="password" name="password" required />
+
+    <button type="submit">Login</button>
+  </form>
+</div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve. All rights reserved.</p>
+</footer>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<script>
+  // Show/hide nav links based on login state
+  fetch("/auth/status")
+    .then(res => res.json())
+    .then(data => {
+      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
+      const hideIfLoggedIn = ["nav-login", "nav-register"];
+
+      if (data.loggedIn) {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+      } else {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+      }
+    });
+
+  // Toast alert
+  function showToast(message, color = "#f44336") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.background = color;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3000);
+  }
+
+  // AJAX login handler
+  document.getElementById("login-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    try {
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showToast("✅ Login successful", "#4CAF50");
+        setTimeout(() => window.location.href = result.redirect, 1000);
+      } else {
+        showToast(result.message || "❌ Login failed");
+      }
+    } catch (err) {
+      showToast("❌ Network error. Please try again.");
+    }
+  });
+</script>
+
+</body>
+</html>

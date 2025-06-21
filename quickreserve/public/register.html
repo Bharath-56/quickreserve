@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickReserve - Register</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s ease-in-out;
+      z-index: 9999;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" id="nav-login">Login</a>
+    <a href="register.html" id="nav-register">Register</a>
+    <a href="search.html" id="nav-search">Search</a>
+    <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+    <a href="admin-login.html" id="nav-admin">Admin</a>
+    <a href="/auth/logout" id="nav-logout">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>Create an Account</h2>
+  <form id="register-form">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" required />
+
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required />
+
+    <button type="submit">Register</button>
+  </form>
+</div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve. All rights reserved.</p>
+</footer>
+
+<!-- Toast Message -->
+<div id="toast" class="toast"></div>
+
+<script>
+  // Toggle nav items based on session
+  fetch("/auth/status")
+    .then(res => res.json())
+    .then(data => {
+      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
+      const hideIfLoggedIn = ["nav-login", "nav-register"];
+
+      if (data.loggedIn) {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+      } else {
+        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
+        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
+      }
+    });
+
+  // Toast popup function
+  function showToast(message, color = "#f44336") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.background = color;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3000);
+  }
+
+  // Handle form submission via fetch
+  document.getElementById("register-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const name = e.target.name.value;
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    try {
+      const response = await fetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showToast(result.message || "✅ Registration successful", "#4CAF50");
+        e.target.reset();
+      } else {
+        showToast(result.message || "❌ Registration failed");
+      }
+    } catch (err) {
+      showToast("❌ Network error during registration");
+    }
+  });
+</script>
+
+</body>
+</html>

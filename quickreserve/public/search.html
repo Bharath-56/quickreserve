@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Search Trains | QuickReserve</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s ease-in-out;
+      z-index: 9999;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .train-card {
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      background: #fcfcfc;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚄 QuickReserve</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" id="nav-login">Login</a>
+    <a href="register.html" id="nav-register">Register</a>
+    <a href="search.html" id="nav-search">Search</a>
+    <a href="mybookings.html" id="nav-bookings">My Bookings</a>
+    <a href="admin-login.html" id="nav-admin">Admin</a>
+    <a href="/auth/logout" id="nav-logout">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>Search for Trains</h2>
+  <form id="search-form">
+    <label>Source</label>
+    <input type="text" id="source" required />
+    <label>Destination</label>
+    <input type="text" id="destination" required />
+    <label>Date</label>
+    <input type="date" id="date" required />
+    <button type="submit">Search</button>
+  </form>
+
+  <div id="results" class="results"></div>
+</div>
+
+<footer>
+  <p>&copy; 2025 QuickReserve. All rights reserved.</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // 🔄 Toggle navbar based on login
+  fetch("/auth/status")
+    .then(res => res.json())
+    .then(data => {
+      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
+      const hideIfLoggedIn = ["nav-login", "nav-register"];
+      showIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "inline-block" : "none");
+      hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "none" : "inline-block");
+    });
+
+  // 🔔 Toast message display
+  function showToast(message, color = "#f44336") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.background = color;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3000);
+  }
+
+  // 🔍 Train search handler
+  document.getElementById("search-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const source = document.getElementById("source").value;
+    const destination = document.getElementById("destination").value;
+    const date = document.getElementById("date").value;
+
+    const res = await fetch(`/user/search?source=${source}&destination=${destination}&date=${date}`);
+    const data = await res.json();
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+
+    if (!data.success || data.trains.length === 0) {
+      resultsDiv.innerHTML = "<p>No trains found for the selected route and date.</p>";
+      return;
+    }
+
+    resultsDiv.innerHTML = "<h3>Available Trains</h3>";
+    data.trains.forEach(train => {
+      const card = document.createElement("div");
+      card.className = "train-card";
+      card.innerHTML = `
+        <strong>${train.name}</strong><br>
+        ${train.source} ➡ ${train.destination}<br>
+        Date: ${train.date}<br>
+        Departure: ${train.departure_time} | Arrival: ${train.arrival_time}<br><br>
+        <form class="book-form">
+          <input type="hidden" name="train_id" value="${train.id}" />
+          <label>Class:</label>
+          <select name="seat_class" required>
+            <option value="Sleeper">Sleeper</option>
+            <option value="AC">AC</option>
+            <option value="General">General</option>
+          </select>
+          <label>Tickets:</label>
+          <input type="number" name="quantity" min="1" value="1" required />
+          <button type="submit">Book</button>
+        </form>
+      `;
+      resultsDiv.appendChild(card);
+    });
+
+    // 🎟 Attach book handlers
+    document.querySelectorAll(".book-form").forEach(form => {
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const train_id = this.querySelector("input[name='train_id']").value;
+        const seat_class = this.querySelector("select[name='seat_class']").value;
+        const quantity = this.querySelector("input[name='quantity']").value;
+
+        try {
+          const res = await fetch("/user/book", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ train_id, seat_class, quantity })
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            showToast(result.message, "#4CAF50");
+          } else {
+            showToast(result.message || "Booking failed");
+          }
+        } catch (err) {
+          showToast("❌ Booking error");
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
