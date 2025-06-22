@@ -19,8 +19,15 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 1rem;
-      background: #f9f9ff;
+      background: #fdfdfd;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .booking-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .booking-card strong {
@@ -28,8 +35,42 @@
       font-size: 1.2rem;
     }
 
-    nav a {
-      margin-right: 10px;
+    .cancel-btn, .print-btn {
+      margin-top: 0.5rem;
+      padding: 6px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .cancel-btn {
+      background-color: #ff4d4f;
+      color: white;
+    }
+
+    .print-btn {
+      background-color: #333;
+      color: white;
+      margin-left: 0.5rem;
+    }
+
+    .toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #444;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
     }
   </style>
 </head>
@@ -57,8 +98,9 @@
   <p>&copy; 2025 QuickReserve. All rights reserved.</p>
 </footer>
 
+<div id="toast" class="toast"></div>
+
 <script>
-  // Navbar session update
   fetch("/auth/status")
     .then(res => res.json())
     .then(data => {
@@ -68,27 +110,58 @@
       hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "none" : "inline-block");
     });
 
-  // Fetch bookings
- fetch("/user/mybookings")
-  .then(res => res.json())
-  .then(data => {
+  function showToast(message, success = true) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.backgroundColor = success ? "#4CAF50" : "#f44336";
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3000);
+  }
+
+  async function fetchBookings() {
+    const res = await fetch("/user/mybookings");
+    const data = await res.json();
+    const container = document.getElementById("booking-list");
+    container.innerHTML = "";
+
     if (!data.success || data.bookings.length === 0) {
-      document.getElementById("booking-list").innerHTML = "<p>No bookings found.</p>";
+      container.innerHTML = "<p>No bookings found.</p>";
       return;
     }
 
-    // Render the list
     data.bookings.forEach(b => {
-      const item = document.createElement("li");
-      item.innerHTML = `
-        <strong>${b.name}</strong> (${b.source} ➡ ${b.destination})<br>
-        Date: ${b.date} | Class: ${b.seat_class} | Quantity: ${b.quantity}<br>
-        Departure: ${b.departure_time} | Arrival: ${b.arrival_time}
+      const card = document.createElement("div");
+      card.className = "booking-card";
+      card.innerHTML = `
+        <strong>Ticket #${b.id} - ${b.name}</strong><br>
+        ${b.source} ➡ ${b.destination}<br>
+        Date: ${b.date}<br>
+        Departure: ${b.departure_time} | Arrival: ${b.arrival_time}<br>
+        Class: ${b.seat_class} | Tickets: ${b.quantity}<br>
+        <button class="cancel-btn" data-id="${b.id}">Cancel</button>
+        <button class="print-btn" onclick="window.print()">Print</button>
       `;
-      document.getElementById("booking-list").appendChild(item);
+      container.appendChild(card);
     });
-  });
 
+    document.querySelectorAll(".cancel-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        if (confirm("Are you sure you want to cancel this booking?")) {
+          const res = await fetch(`/user/cancel/${id}`, { method: "POST" });
+          const result = await res.json();
+          if (result.success) {
+            showToast("Booking cancelled successfully");
+            fetchBookings();
+          } else {
+            showToast("Failed to cancel booking", false);
+          }
+        }
+      });
+    });
+  }
+
+  fetchBookings();
 </script>
 
 </body>

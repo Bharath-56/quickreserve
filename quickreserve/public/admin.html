@@ -2,32 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QuickReserve - Admin Panel</title>
+  <title>Admin Panel | QuickReserve</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .dashboard-section {
+      margin-top: 2rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    table th, table td {
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f0f0f0;
+    }
+
+    .actions button {
+      margin-right: 0.5rem;
+      padding: 4px 8px;
+    }
+  </style>
 </head>
 <body>
 
 <header>
-  <h1>🚄 QuickReserve</h1>
+  <h1>🚄 QuickReserve Admin Panel</h1>
   <nav>
-  <a href="index.html">Home</a>
-  <a href="login.html" id="nav-login">Login</a>
-  <a href="register.html" id="nav-register">Register</a>
-  <a href="search.html" id="nav-search">Search</a>
-  <a href="mybookings.html" id="nav-bookings">My Bookings</a>
-  <a href="admin.html" id="nav-admin">Admin</a>
-  <a href="/auth/logout" id="nav-logout">Logout</a>
-
-</nav>
-
-
+    <a href="index.html">Home</a>
+    <a href="admin.html">Admin</a>
+    <a href="/auth/logout" id="nav-logout">Logout</a>
+  </nav>
 </header>
 
-
 <div class="container">
-  <h2>Admin Panel - Add Train</h2>
- <form action="/admin/add-train" method="POST">
+  <h2>Add Train</h2>
+   <form action="/admin/add-train" method="POST">
   <label for="name">Train Name</label>
   <input type="text" name="name" required placeholder="Eenter train name">
 
@@ -49,6 +66,41 @@
   <button type="submit">Add Train</button>
 </form>
 
+  <div class="dashboard-section">
+
+    <h2>🚆 All Trains</h2>
+<table id="train-table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Name</th><th>Source</th><th>Destination</th><th>Date</th>
+      <th>Departure</th><th>Arrival</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+    <h2>📋 Users List</h2>
+    <table id="user-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Email</th><th>Verified</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>🎟 Bookings</h2>
+    <table id="booking-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>User</th><th>Email</th><th>Train</th>
+          <th>From</th><th>To</th><th>Date</th>
+          <th>Class</th><th>Qty</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 
 <footer>
@@ -59,20 +111,77 @@
   fetch("/auth/status")
     .then(res => res.json())
     .then(data => {
-      const showIfLoggedIn = ["nav-search", "nav-bookings", "nav-admin", "nav-logout"];
-      const hideIfLoggedIn = ["nav-login", "nav-register"];
+      document.getElementById("nav-logout").style.display = data.loggedIn ? "inline-block" : "none";
+    });
 
-      if (data.loggedIn) {
-        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
-        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
-      } else {
-        showIfLoggedIn.forEach(id => document.getElementById(id).style.display = "none");
-        hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = "inline-block");
-      }
+    // Fetch and render trains
+fetch("/admin/trains")
+  .then(res => res.json())
+  .then(trains => {
+    const table = document.querySelector("#train-table tbody");
+    table.innerHTML = "";
+    trains.forEach(train => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${train.id}</td>
+        <td>${train.name}</td>
+        <td>${train.source}</td>
+        <td>${train.destination}</td>
+        <td>${train.date}</td>
+        <td>${train.departure_time}</td>
+        <td>${train.arrival_time}</td>
+        <td>
+          <button onclick="deleteTrain(${train.id})" style="background:red;color:white;border:none;padding:5px 8px;">Delete</button>
+        </td>
+      `;
+      table.appendChild(row);
+    });
+  });
+
+// Handle train deletion
+function deleteTrain(id) {
+  if (confirm("Are you sure you want to delete this train?")) {
+    fetch(`/admin/delete-train/${id}`, { method: "POST" })
+      .then(res => {
+        if (res.ok) {
+          alert("Train deleted successfully.");
+          location.reload(); // refresh the page
+        } else {
+          alert("Failed to delete train.");
+        }
+      });
+  }
+}
+
+
+  // Fetch users
+  fetch("/admin/users")
+    .then(res => res.json())
+    .then(users => {
+      const table = document.querySelector("#user-table tbody");
+      users.forEach(u => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${u.id}</td><td>${u.name}</td><td>${u.email}</td><td>${u.is_verified ? "✅" : "❌"}</td>`;
+        table.appendChild(row);
+      });
+    });
+
+  // Fetch bookings
+  fetch("/admin/bookings")
+    .then(res => res.json())
+    .then(bookings => {
+      const table = document.querySelector("#booking-table tbody");
+      bookings.forEach(b => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${b.id}</td><td>${b.user_name}</td><td>${b.email}</td>
+          <td>${b.train_name}</td><td>${b.source}</td><td>${b.destination}</td>
+          <td>${b.date}</td><td>${b.seat_class}</td><td>${b.quantity}</td>
+        `;
+        table.appendChild(row);
+      });
     });
 </script>
-
-
 
 </body>
 </html>

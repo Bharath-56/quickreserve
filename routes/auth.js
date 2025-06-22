@@ -74,34 +74,45 @@ router.post("/register", async (req, res) => {
 });
 
 // 🔓 Login
+// 🔓 SECURE LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
-  // 🚫 Basic validation
+  console.log("Login attempt for email:", email);
 
   try {
     const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
     if (result.rows.length === 0) {
+      console.warn("❌ User not found");
       return res.status(401).json({ success: false, message: "❌ User not found" });
     }
 
     const user = result.rows[0];
-    const match = await bcrypt.compare(password, user.password);
 
     if (!user.is_verified) {
-  return res.status(403).json({ success: false, message: "⚠️ Please verify your email before logging in." });
-  }
+      console.warn("⚠️ Email not verified");
+      return res.status(403).json({ success: false, message: "⚠️ Please verify your email first" });
+    }
 
-    // 🧠 Store session user
+    // ✅ Compare hashed password
+    const match = await bcrypt.compare(password, user.password);
+    console.log("Password match result:", match);
+
+    if (!match) {
+      console.warn("❌ Invalid password");
+      return res.status(401).json({ success: false, message: "❌ Invalid password" });
+    }
+
     req.session.userId = user.id;
+    console.log("✅ Login successful for user:", user.email);
+    return res.status(200).json({ success: true, redirect: "/search.html" });
 
-    res.status(200).json({ success: true, redirect: "/search.html" });
   } catch (err) {
-    console.error("Login Error:", err);
-    res.status(500).json({ success: false, message: "❌ Login failed" });
+    console.error("❌ Login error:", err);
+    return res.status(500).json({ success: false, message: "❌ Login failed" });
   }
 });
+
 
 router.get("/verify", async (req, res) => {
   const { token } = req.query;
