@@ -29,22 +29,22 @@
   <h2>Admin Panel - Add Train</h2>
  <form action="/admin/add-train" method="POST">
   <label for="name">Train Name</label>
-  <input type="text" name="name" required>
+  <input type="text" name="name" required placeholder="Eenter youe name">
 
   <label for="source">Source</label>
-  <input type="text" name="source" required>
+  <input type="text" name="source" required placeholder="Enter source address">
 
   <label for="destination">Destination</label>
-  <input type="text" name="destination" required>
+  <input type="text" name="destination" required placeholder="Enter destination address">
 
   <label for="date">Date</label>
-  <input type="date" name="date" required>
+  <input type="date" name="date" required placeholder="Enter date">
 
   <label for="departure_time">Departure Time</label>
-  <input type="time" name="departure_time" required>
+  <input type="time" name="departure_time" required placeholder="Enter departure time">
 
   <label for="arrival_time">Arrival Time</label>
-  <input type="time" name="arrival_time" required>
+  <input type="time" name="arrival_time" required placeholder="Enter arrival time">
 
   <button type="submit">Add Train</button>
 </form>
