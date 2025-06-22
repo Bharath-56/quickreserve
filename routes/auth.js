@@ -47,7 +47,7 @@ router.post("/register", async (req, res) => {
     await db.query("INSERT INTO email_tokens (user_id, token) VALUES ($1, $2)", [userId, token]);
 
     // 5️⃣ Send verification email
-    const verifyLink = `http://192.168.122.203:3000/auth/verify?token=${token}`;
+    const verifyLink = `https://quickreserve-dm48.onrender.com/auth/verify?token=${token}`;
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
