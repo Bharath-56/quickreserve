@@ -3,18 +3,29 @@ const router = express.Router();
 const db = require("../db");
 
 router.post("/add-train", async (req, res) => {
-  const { name, source, destination, date, departure_time, arrival_time } = req.body;
+  const { name, source, destination, date, departure_time, arrival_time, runs_daily } = req.body;
+
+  const repeatDays = runs_daily ? 7 : 1;
+
   try {
-    await db.query(
-      "INSERT INTO trains (name, source, destination, date, departure_time, arrival_time) VALUES ($1, $2, $3, $4, $5, $6)",
-      [name, source, destination, date, departure_time, arrival_time]
-    );
+    for (let i = 0; i < repeatDays; i++) {
+      const travelDate = new Date(date);
+      travelDate.setDate(travelDate.getDate() + i);
+      const formattedDate = travelDate.toISOString().split("T")[0];
+
+      await db.query(
+        "INSERT INTO trains (name, source, destination, date, departure_time, arrival_time) VALUES ($1, $2, $3, $4, $5, $6)",
+        [name, source, destination, formattedDate, departure_time, arrival_time]
+      );
+    }
+
     res.redirect("/admin.html");
   } catch (err) {
     console.error("Error adding train:", err);
     res.status(500).send("Failed to add train");
   }
 });
+
 
 router.get("/users", async (req, res) => {
   try {

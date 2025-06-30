@@ -52,9 +52,13 @@
   <h2>Search for Trains</h2>
   <form id="search-form">
     <label for="source">Source</label>
-    <input type="text" id="source" required placeholder="Enter source address"/>
+    <input type="text" id="source" list="source-options" required placeholder="Enter source address" />
+    <datalist id="source-options"></datalist>
+
     <label for="destination">Destination</label>
-    <input type="text" id="destination" required placeholder="Enter destination address" />
+    <input type="text" id="destination" list="destination-options" required placeholder="Enter destination address" />
+    <datalist id="destination-options"></datalist>
+
     <label for="date">Date</label>
     <input type="date" id="date" required placeholder="Enter date"/>
     <button type="submit">Search</button>
@@ -70,7 +74,7 @@
 <div id="toast" class="toast"></div>
 
 <script>
-  // 🔄 Toggle navbar based on login
+  // 🔄 Navbar session toggle
   fetch("/auth/status")
     .then(res => res.json())
     .then(data => {
@@ -80,7 +84,35 @@
       hideIfLoggedIn.forEach(id => document.getElementById(id).style.display = data.loggedIn ? "none" : "inline-block");
     });
 
-  // 🔔 Toast message display
+  // 🔁 Autocomplete Setup
+  function setupAutocomplete(inputId, datalistId) {
+    const input = document.getElementById(inputId);
+    const datalist = document.getElementById(datalistId);
+
+    input.addEventListener("input", async () => {
+      const q = input.value;
+      if (q.length < 1) return;
+
+      try {
+        const res = await fetch(`/user/stations?q=${encodeURIComponent(q)}`);
+        const stations = await res.json();
+
+        datalist.innerHTML = "";
+        stations.forEach(station => {
+          const opt = document.createElement("option");
+          opt.value = station;
+          datalist.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Station autocomplete failed:", err);
+      }
+    });
+  }
+
+  setupAutocomplete("source", "source-options");
+  setupAutocomplete("destination", "destination-options");
+
+  // ✅ Toast helper
   function showToast(message, color = "#f44336") {
     const toast = document.getElementById("toast");
     toast.textContent = message;
@@ -89,7 +121,7 @@
     setTimeout(() => toast.classList.remove("show"), 3000);
   }
 
-  // 🔍 Train search handler
+  // 🔍 Search handler
   document.getElementById("search-form").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -132,7 +164,7 @@
       resultsDiv.appendChild(card);
     });
 
-    // 🎟 Attach book handlers
+    // 🧾 Booking handler
     document.querySelectorAll(".book-form").forEach(form => {
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -148,11 +180,7 @@
           });
 
           const result = await res.json();
-          if (result.success) {
-            showToast(result.message, "#4CAF50");
-          } else {
-            showToast(result.message || "Booking failed");
-          }
+          showToast(result.message || "Booking failed", result.success ? "#4CAF50" : "#f44336");
         } catch (err) {
           showToast("❌ Booking error");
         }

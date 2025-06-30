@@ -121,4 +121,25 @@ router.post("/cancel/:bookingId", async (req, res) => {
   }
 });
 
+// 🔍 Autocomplete station search
+router.get("/stations", async (req, res) => {
+  const { q } = req.query;
+  if (!q || q.length < 1) return res.json([]);
+
+  try {
+    const result = await db.query(
+      `SELECT DISTINCT source AS name FROM trains WHERE source ILIKE $1
+       UNION
+       SELECT DISTINCT destination AS name FROM trains WHERE destination ILIKE $1
+       ORDER BY name LIMIT 10`,
+      [`${q}%`]
+    );
+    res.json(result.rows.map(r => r.name));
+  } catch (err) {
+    console.error("❌ Station search error:", err);
+    res.status(500).json([]);
+  }
+});
+
+
 module.exports = router;
