@@ -46,7 +46,7 @@ DB_PASSWORD=your-db-password
 DB_NAME=your-db-name
 DB_PORT=5432
 SESSION_SECRET=yourSecretKey
-EMAIL_USER=yourEmail@gmail.com
+EMAIL_USER=@gmail.com
 EMAIL_PASS=yourAppPassword
 
 4. Start the server*
