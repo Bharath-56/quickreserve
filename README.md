@@ -53,7 +53,7 @@ EMAIL_PASS=yourAppPassword
 node server.js
 
 👨‍💻 Developed By
-Bharath S M
+Bharath S M ,
 M Manjunath
 
 
